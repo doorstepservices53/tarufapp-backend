@@ -27,7 +27,8 @@ export const getRegistrations = async (req, res) => {
   try {
     const { data, error } = await Supabase.from("registrations")
       .select("*")
-      .eq("taruf_id", taruf_id);
+      .eq("taruf_id", taruf_id)
+      .order("badgeNo", { ascending: true });
 
     if (error) throw error;
 
@@ -65,7 +66,7 @@ export const getCandidatesNotSelectors = async (req, res) => {
   try {
     // 1. Fetch all registrations and round1 selections in parallel
     const [regsResp, r1Resp] = await Promise.all([
-      Supabase.from("registrations").select("*").eq("taruf_id", taruf_id),
+      Supabase.from("registrations").select("*").eq("taruf_id", taruf_id).order("badgeNo", { ascending: true }),
       Supabase.from("round1_selected").select("*").eq("taruf_id", taruf_id),
     ]);
 

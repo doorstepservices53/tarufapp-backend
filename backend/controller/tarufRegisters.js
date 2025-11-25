@@ -15,7 +15,7 @@ export const TarufRegisters = async (req, res) => {
     const { data, error } = await Supabase.from("registrations")
       .select("*")
       .eq("taruf_id", taruf_id)
-      .order("invitationSentDate", { ascending: false });
+      .order("badgeNo", { ascending: true });
 
     if (error) throw error;
 
@@ -34,6 +34,7 @@ export const TarufRegistersByIds = async (req, res) => {
     const { data, error } = await Supabase.from("registrations")
       .select("*")
       .eq("id", id)
+      .order("badgeNo", { ascending: true })
       .single();
 
     if (error) throw error;

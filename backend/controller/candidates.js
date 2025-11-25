@@ -35,6 +35,7 @@ const checkRegistration = async (req, res) => {
       .select("id, itsNumber, password, name, taruf_id")
       .eq("taruf_id", taruf_id)
       .eq("itsNumber", itsNumber)
+      .order("badgeNo", { ascending: true })
       .maybeSingle();
 
     if (error) {
@@ -71,7 +72,7 @@ const setPassword = async (req, res) => {
 
     const { error } = await Supabase.from("registrations")
       .update({ password: hashed })
-      .eq("id", registration_id);
+      .eq("id", registration_id).order("badgeNo", { ascending: true });
     if (error) {
       console.error("Supabase setPassword update error:", error);
       return res.status(500).json({ success: false, error: "Database error" });
@@ -102,6 +103,7 @@ const candidateLogin = async (req, res) => {
     const { data: reg, error } = await Supabase.from("registrations")
       .select("id, itsNumber, password, name, taruf_id")
       .eq("id", registration_id)
+      .order("badgeNo", { ascending: true })
       .maybeSingle();
 
     if (error) {
@@ -148,6 +150,7 @@ const getRegistration = async (req, res) => {
       "registrations"
     )
       .select("*, tarufs(*)")
+      .order("badgeNo", { ascending: true })
       .eq("id", id)
       .maybeSingle();
 
@@ -236,7 +239,7 @@ const listRegistrations = async (req, res) => {
         `id, itsNumber, name, photo1Url, dateOfBirth, currentCity, gender, taruf_id`
       )
       .eq("taruf_id", Number(taruf_id))
-      .order("name", { ascending: true });
+      .order("badgeNo", { ascending: true });
 
     if (error) {
       console.error("listRegistrations error:", error);
@@ -259,6 +262,7 @@ const getRegistrationById = async (req, res) => {
     const { data, error } = await Supabase.from("registrations")
       .select("*")
       .eq("id", id)
+      .order("badgeNo", { ascending: true })
       .maybeSingle();
 
     if (error) {
@@ -295,7 +299,8 @@ const getRegistrations = async (req, res) => {
     const { data, error } = await Supabase.from("registrations")
       .select("*")
       .eq("taruf_id", taruf_id)
-      .eq("group", group);
+      .eq("group", group)
+      .order("badgeNo", { ascending: true });
 
     if (error) {
       console.error("getRegistrations error:", error);
@@ -1096,6 +1101,7 @@ const handleCandidateSchedule = async (req, res) => {
       "registrations"
     )
       .select("id, name, photo1Url, itsNumber")
+      .order("badgeNo", { ascending: true })
       .in("id", Array.from(participantIds));
 
     if (profileError) {
