@@ -553,6 +553,10 @@ const addRound1Selection = async (req, res) => {
       selected_last_name,
       selected_photo1url,
       selected_date_of_birth,
+      selector_name,
+      selected_name,
+      selector_badge,
+      selected_badge,
     } = req.body || {};
 
     if (!selector_id || !selected_registration_id) {
@@ -621,6 +625,10 @@ const addRound1Selection = async (req, res) => {
       selected_photo1url: selected_photo1url ?? null,
       selected_date_of_birth: selected_date_of_birth ?? null,
       created_at: new Date().toISOString(),
+      selector_name: selector_name ?? null,
+      selected_name: selected_name ?? null,
+      selector_badge: selector_badge ?? null,
+      selected_badge: selected_badge ?? null,
     };
 
     const { data: inserted, error: insertErr } = await Supabase.from(
