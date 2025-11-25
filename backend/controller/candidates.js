@@ -655,14 +655,16 @@ const addRound1Selection = async (req, res) => {
 // deleteRound1Selection (kept)
 const deleteRound1Selection = async (req, res) => {
   try {
+    const { taruf_id } = req.params;
     const { selector_id, selected_registration_id } = req.query;
     const numeric_selector_id = selector_id;
     const numeric_selected_id = parseInt(selected_registration_id);
 
     const { data, error } = await Supabase.from("round1_selected")
       .delete()
+      .eq("taruf_id", Number(taruf_id))
       .eq("selector_registration_id", numeric_selector_id)
-      .eq("id", numeric_selected_id)
+      .eq("selected_registration_id", numeric_selected_id)
       .select();
 
     if (error) {
