@@ -21,6 +21,8 @@ import {
   handleCandidateSchedule,
   updateRound1Timings,
   updateFirstChoice,
+  getFeedbacks,
+  saveFeedback,
 } from "../controller/candidates.js";
 import {
   getAllCandidatesWithFeedback,
@@ -31,13 +33,6 @@ import {
 import { getCandidatesNotSelectors } from "../controller/yetNotSelects.js";
 
 const router = express.Router();
-
-// prefix on server will be /api (in server.js). So final paths are:
-// GET  /api/tarufs/active
-// POST /api/candidates/check
-// POST /api/candidates/set-password
-// POST /api/candidates/login
-// GET  /api/candidates/:id
 
 router.get("/tarufs/active", getActiveTarufs);
 router.post("/candidates/check", checkRegistration);
@@ -79,7 +74,9 @@ router.patch("/:taruf_id/round1_selected/first_choice", setRound1FirstChoice);
 
 //feedback route
 router.post("/feedback", submitFeedback);
+router.post("/feedback", saveFeedback);
 router.get("/feedback", getFeedback);
+router.get("/feedback", getFeedbacks);
 router.get("/members-feedback/all", getAllCandidatesWithFeedback);
 
 // POST a review
