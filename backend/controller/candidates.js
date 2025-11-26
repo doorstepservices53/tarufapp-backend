@@ -142,6 +142,7 @@ const candidateLogin = async (req, res) => {
 };
 
 const getRegistration = async (req, res) => {
+  console.log("getRegistration called with params:", req.params);
   try {
     const { id } = req.params;
     if (!id)
@@ -289,7 +290,7 @@ const getRegistrationById = async (req, res) => {
 
 // getRegistrations (kept)
 const getRegistrations = async (req, res) => {
-  console.log("getRegistrations in Candidates Route called with query:", req.query);
+  console.log("getRegistrations called with query:", req.query);
   try {
     const taruf_id = req.query.taruf_id;
     const group = req.query.group;
