@@ -289,6 +289,7 @@ const getRegistrationById = async (req, res) => {
 
 // getRegistrations (kept)
 const getRegistrations = async (req, res) => {
+  console.log("getRegistrations in Candidates Route called with query:", req.query);
   try {
     const taruf_id = req.query.taruf_id;
     const group = req.query.group;
