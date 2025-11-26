@@ -24,6 +24,8 @@ const Members = async (req, res) => {
           name,
           contact,
           email,
+          password,
+          newpassword,
           designation_id,
           location_id,
         } = req.body || {};
@@ -44,11 +46,18 @@ const Members = async (req, res) => {
             error: "Missing required fields",
           });
         }
+        // If password is to be changed
+        let hashedPassword = password;
+        if (newpassword) {
+          hashedPassword = await bcrypt.hash(newpassword, 10);
+        }
+
         const updateRow = {
           its_number: its_number,
           name: name,
           contact: contact,
           email: email,
+          password: hashedPassword,
           designation_id: designation_id,
           location_id: location_id,
           updated_at: new Date().toISOString(),
