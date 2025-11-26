@@ -464,7 +464,7 @@ const submitRound2 = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Missing taruf_id" });
 
-    const { selector_id, selector_its, selection } = req.body;
+    const { selector_id, selector_its, selection, selector_name, selector_badge } = req.body;
     if (!selector_id || !selection)
       return res
         .status(400)
@@ -511,9 +511,12 @@ const submitRound2 = async (req, res) => {
       taruf_id: Number(taruf_id),
       selector_registration_id: String(selector_id),
       selector_its: selector_its ?? null,
+      selector_name: selector_name,
+      selector_badge: selector_badge || null,
       selected_registration_id: String(selection.registration_id),
-      selected_its: selection.itsNumber ? String(selection.itsNumber) : null,
-      selected_name: selection.name || null,
+      selected_its: String(selection.itsNumber),
+      selected_name: selection.name,
+      selected_badge: selection.badgeNo || null,
       selected_photo1url: selection.photo1Url || null,
       selected_date_of_birth: selection.dateOfBirth || null,
       created_at: new Date().toISOString(),
