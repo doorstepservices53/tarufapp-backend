@@ -72,7 +72,8 @@ const setPassword = async (req, res) => {
 
     const { error } = await Supabase.from("registrations")
       .update({ password: hashed })
-      .eq("id", registration_id).order("badgeNo", { ascending: true });
+      .eq("id", registration_id)
+      .order("badgeNo", { ascending: true });
     if (error) {
       console.error("Supabase setPassword update error:", error);
       return res.status(500).json({ success: false, error: "Database error" });
@@ -464,7 +465,13 @@ const submitRound2 = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Missing taruf_id" });
 
-    const { selector_id, selector_its, selection, selector_name, selector_badge } = req.body;
+    const {
+      selector_id,
+      selector_its,
+      selection,
+      selector_name,
+      selector_badge,
+    } = req.body;
     if (!selector_id || !selection)
       return res
         .status(400)
@@ -617,11 +624,33 @@ const addRound1Selection = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Candidate already selected" });
     }
+    console.log(selector_id, "selector)id");
+    const { data: counsellorData, error: counsellorErr } = await Supabase.from(
+      "registrations"
+    )
+      .select("counsellor")
+      .eq("taruf_id", Number(taruf_id))
+      .eq("id", String(selector_id));
+
+    if (counsellorErr) {
+      console.error(
+        "addRound1Selection: counsellor fetch error",
+        counsellorErr
+      );
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
+
+    // 🎯 THE FIX: Extract the counsellor name correctly
+    const selectorCounsellor =
+      counsellorData && counsellorData.length > 0
+        ? counsellorData[0].counsellor
+        : null; // Set to null if no data found
 
     const row = {
       taruf_id: Number(taruf_id),
       selector_registration_id: String(selector_id),
       selector_its: selector_its ?? null,
+      selector_counsellor: selectorCounsellor,
       selector_date_of_birth,
       selector_photo1url,
       selector_first_name,
@@ -638,6 +667,7 @@ const addRound1Selection = async (req, res) => {
       selector_badge: selector_badge ?? null,
       selected_badge: selected_badge ?? null,
     };
+    console.log(row);
 
     const { data: inserted, error: insertErr } = await Supabase.from(
       "round1_selected"
@@ -1252,6 +1282,99 @@ const updateFirstChoice = async (req, res) => {
     });
   }
 };
+
+const getFeedbacks = async (req, res) => {
+  // Use query parameters for GET request
+  const { selectorIts, partnerIts } = req.query;
+
+  if (!selectorIts || !partnerIts) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing ITS numbers for fetching feedback.",
+    });
+  }
+
+  // 🚨 Define/Import your supabase client here if it's not global
+  // const supabase = ...
+
+  try {
+    const { data, error } = await supabase
+      .from("feedback")
+      .select("feedback") // Select only the feedback text
+      .eq("selector_its", selectorIts)
+      .eq("partner_its", partnerIts)
+      .limit(1); // Should only be one due to the unique constraint
+
+    if (error) throw error;
+
+    // Return the feedback text or null if not found
+    const existingFeedback = data.length > 0 ? data[0].feedback : null;
+
+    return res.status(200).json({
+      success: true,
+      feedback: existingFeedback,
+    });
+  } catch (err) {
+    console.error("Server Error in getFeedback:", err.message);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch feedback.",
+    });
+  }
+};
+
+const saveFeedback = async (req, res) => {
+  // Destructure the required fields from the request body
+  const { selectorIts, partnerIts, feedback, selectorName, partnerName } =
+    req.body;
+
+  // Basic validation
+  if (!selectorIts || !partnerIts) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing selectorIts or partnerIts. Cannot save feedback.",
+    });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("feedback")
+      .upsert(
+        {
+          // Database columns (snake_case) mapping to request body (camelCase)
+          selector_its: String(selectorIts),
+          partner_its: String(partnerIts),
+          selector_name: selectorName,
+          partner_name: partnerName,
+          feedback: feedback,
+          // You can add an updated_at field here if your table has one
+          // updated_at: new Date()
+        },
+        // 'onConflict' specifies the unique columns to check for update (upsert)
+        { onConflict: "selector_its, partner_its" }
+      )
+      .select(); // Request the inserted/updated data back
+
+    if (error) {
+      console.error("Supabase Feedback Upsert Error:", error);
+      throw new Error(error.message);
+    }
+
+    // Respond with success and the updated/inserted data
+    return res.status(200).json({
+      success: true,
+      message: "Feedback successfully auto-saved.",
+      data: data,
+    });
+  } catch (err) {
+    console.error("Server Error in saveFeedback:", err.message);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to save feedback due to a server error.",
+    });
+  }
+};
+
 export {
   getActiveTarufs,
   checkRegistration,
@@ -1273,4 +1396,6 @@ export {
   handleCandidateSchedule,
   updateRound1Timings,
   updateFirstChoice,
+  getFeedbacks,
+  saveFeedback,
 };
