@@ -3,6 +3,7 @@ import { Supabase } from "../db/db.js";
 
 // ✅ GET all registrations for a specific taruf
 export const TarufRegisters = async (req, res) => {
+  console.log("🔍 Fetching Taruf Registers with query:", req.query);
   try {
     const { taruf_id } = req.query;
     if (!taruf_id) {

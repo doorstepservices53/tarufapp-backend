@@ -20,6 +20,7 @@ const extractIts = (registrationRow) => {
 
 /* ----- Controller: Get Registrations by taruf_id (Original for legacy use) ----- */
 export const getRegistrations = async (req, res) => {
+  console.log("getRegistrations called");
   const { taruf_id } = req.query;
   if (!taruf_id)
     return res.status(400).json({ success: false, error: "taruf_id required" });
