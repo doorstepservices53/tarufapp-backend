@@ -39,7 +39,7 @@ const Members = async (req, res) => {
 
         // Basic validation (same as create)
         if (
-          (!its_number, !name, !contact, !email, !designation_id, !location_id)
+          (!its_number, !name, !contact, !designation_id, !location_id)
         ) {
           return res.status(400).json({
             success: false,
@@ -110,7 +110,6 @@ const Members = async (req, res) => {
           (!its_number,
           !name,
           !contact,
-          !email,
           !password,
           !designation_id,
           !location_id)
