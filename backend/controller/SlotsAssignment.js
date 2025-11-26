@@ -33,7 +33,7 @@ export const getAllRound1Slots = async (req, res) => {
       const { data: registrations, error: regError } = await Supabase.from(
         "registrations"
       )
-        .select("id, itsNumber, name")
+        .select("id, itsNumber, name, badgeNo, counsellor")
         // Use the IN filter to fetch all necessary registrations at once
         .in("id", allIds);
 
@@ -44,7 +44,8 @@ export const getAllRound1Slots = async (req, res) => {
         registrationMap[r.id] = {
           itsNumber: r.itsNumber,
           name: r.name,
-          // last_name: r.lastName,
+          badgeNo: r.badgeNo ?? "NA",
+          counsellor: r.counsellor ?? "NA",
         };
       });
     }
@@ -69,15 +70,15 @@ export const getAllRound1Slots = async (req, res) => {
 
         // Selector Details
         selectorITS: selector.itsNumber || "N/A",
-        selectorName: `${selector.first_name || ""} ${
-          selector.last_name || ""
-        }`.trim(),
+        selectorName: selector.name || "N/A",
+        selectorBadgeNo: selector.badgeNo || "N/A",
+        selectorCounsellor: selector.counsellor || "N/A",
 
         // Selected Candidate Details
         selectedITS: selected.itsNumber || "N/A",
-        selectedName: `${selected.first_name || ""} ${
-          selected.last_name || ""
-        }`.trim(),
+        selectedName: selected.name || "N/A",
+        selectedBadgeNo: selected.badgeNo || "N/A",
+        selectedCounsellor: selected.counsellor || "N/A",
       };
     });
 
