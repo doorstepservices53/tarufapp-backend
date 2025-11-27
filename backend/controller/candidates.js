@@ -142,7 +142,6 @@ const candidateLogin = async (req, res) => {
 };
 
 const getRegistration = async (req, res) => {
-  console.log("getRegistration called with params:", req.params);
   try {
     const { id } = req.params;
     if (!id)
@@ -290,7 +289,6 @@ const getRegistrationById = async (req, res) => {
 
 // getRegistrations (kept)
 const getRegistrations = async (req, res) => {
-  console.log("getRegistrations called with query:", req.query);
   try {
     const taruf_id = req.query.taruf_id;
     const group = req.query.group;
@@ -1129,13 +1127,13 @@ const handleCandidateSchedule = async (req, res) => {
         participantIds.add(slot.selected_registration_id);
       }
     });
-
+    console.log(`Participant IDs:`, participantIds);
     // We assume there is a universal 'all_registered_candidates' view/table for profiles
     // Adjust 'all_registered_candidates' to your actual profile table name if needed.
     const { data: profiles, error: profileError } = await Supabase.from(
       "registrations"
     )
-      .select("id, name, photo1Url, itsNumber")
+      .select("id, name, photo1Url, itsNumber, badgeNo")
       .order("badgeNo", { ascending: true })
       .in("id", Array.from(participantIds));
 
@@ -1147,7 +1145,7 @@ const handleCandidateSchedule = async (req, res) => {
     }
 
     const profileMap = new Map(profiles.map((p) => [p.id, p]));
-
+    console.log(`Profile Map:`, profileMap);
     // 3. Combine slot data with partner profile data
     slots.forEach((slot) => {
       // Determine the partner's ID
