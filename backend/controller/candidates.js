@@ -429,7 +429,8 @@ const submitRound1 = async (req, res) => {
 const getRound1Selected = async (req, res) => {
   try {
     const taruf_id = req.query.taruf_id;
-    const selector_id = req.query.selector_id; // Will be undefined if not provided
+    const selector_id = req.query.selector_id;
+    const memberName = req.query.memberName; // Will be undefined if not provided
 
     if (!taruf_id)
       return res
@@ -447,9 +448,28 @@ const getRound1Selected = async (req, res) => {
       console.error("getRound1Selected RPC error:", error);
       return res.status(500).json({ success: false, error: "Database error" });
     }
+    let currentData = data || [];
+    let memberCandidates = [];
+    if (memberName) {
+      const { data: memberCandidatesData, error: memberCandidatesError } = await Supabase.from("registrations")
+        .select("*")
+        .ilike("counsellor", `%${memberName}%`);
+      if (!memberCandidatesError) {
+        memberCandidates = memberCandidatesData;
+      }
+    }
+    if (memberCandidates.length > 0) {
+      const memberCandidateIds = new Set(
+        memberCandidates.map((c) => String(c.registration_id))
+      );
+      currentData = currentData.filter((item) =>
+        memberCandidateIds.has(String(item.selected_registration_id)) ||
+        memberCandidateIds.has(String(item.selector_registration_id))
+      );
+    }
 
     // The data is already flat and joined!
-    return res.status(200).json({ success: true, data: data || [] });
+    return res.status(200).json({ success: true, data: currentData || [] });
   } catch (err) {
     console.error("getRound1Selected exception:", err);
     return res.status(500).json({ success: false, error: "Server error" });
