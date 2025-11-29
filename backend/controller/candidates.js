@@ -1439,7 +1439,7 @@ async function createRating(req, res) {
     //       error: "Invalid rating. Allowed: 'yes' or 'no'.",
     //     });
     // }
-    // await Supabase.from("ratings").delete().eq("selector_its", String(selector_its)).eq("partner_its", String(partner_its));
+    await Supabase.from("ratings").delete().eq("selector_its", String(selector_its)).eq("partner_its", String(partner_its));
     // Upsert: If same selector_its + partner_its exists, update rating; otherwise insert new
     const { data, error } = await Supabase.from("ratings").insert([{
       selector_its: String(selector_its),
