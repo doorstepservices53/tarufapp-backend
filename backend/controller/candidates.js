@@ -444,7 +444,8 @@ const getRound1Selected = async (req, res) => {
         `*, 
   selector_counsellor`
       ) // Select all columns from the table/view
-      .eq("taruf_id", Number(taruf_id)); // Filter by taruf_id
+      .eq("taruf_id", Number(taruf_id))
+      .eq("selector_registration_id", String(selector_id)); // Filter by taruf_id
 
     if (error) {
       console.error("getRound1Selected DB error:", error);
