@@ -1424,22 +1424,22 @@ async function createRating(req, res) {
     }
 
     // Normalize rating to lowercase string "yes" or "no"
-    if (typeof rating === "number") {
-      // backward compatibility: treat nonzero as yes, zero as no
-      rating = rating ? "yes" : "no";
-    } else {
-      rating = String(rating).trim().toLowerCase();
-    }
+    // if (typeof rating === "number") {
+    //   // backward compatibility: treat nonzero as yes, zero as no
+    //   rating = rating ? "yes" : "no";
+    // } else {
+    //   rating = String(rating).trim().toLowerCase();
+    // }
 
-    if (!["yes", "no"].includes(rating)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Invalid rating. Allowed: 'yes' or 'no'.",
-        });
-    }
-    await Supabase.from("ratings").delete().eq("selector_its", String(selector_its)).eq("partner_its", String(partner_its));
+    // if (!["yes", "no"].includes(rating)) {
+    //   return res
+    //     .status(400)
+    //     .json({
+    //       success: false,
+    //       error: "Invalid rating. Allowed: 'yes' or 'no'.",
+    //     });
+    // }
+    // await Supabase.from("ratings").delete().eq("selector_its", String(selector_its)).eq("partner_its", String(partner_its));
     // Upsert: If same selector_its + partner_its exists, update rating; otherwise insert new
     const { data, error } = await Supabase.from("ratings").insert([{
       selector_its: String(selector_its),
@@ -1475,6 +1475,7 @@ async function getSingleRating(req, res) {
       .select("rating")
       .eq("selector_its", selectorIts)
       .eq("partner_its", partnerIts)
+      .order("created_at", { ascending: false })
       .maybeSingle();
 
     if (error) {
@@ -1530,7 +1531,7 @@ async function getRatingsForCounsellor(req, res) {
     const { data: given, error: givenErr } = await Supabase
       .from("ratings")
       .select("*")
-      .in("selector_its", itsList);
+      .in("selector_its", itsList).order("created_at", { ascending: false });
 
     if (givenErr) {
       console.error("ratings given query error:", givenErr);

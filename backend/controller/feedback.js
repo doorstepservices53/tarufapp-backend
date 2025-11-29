@@ -15,7 +15,7 @@ const getFeedback = async (req, res) => {
     // Start building the query
     let query = Supabase.from("feedback")
       .select("*")
-      .eq("partnerIts", partnerIts);
+      .eq("partnerIts", partnerIts).order("created_at", { ascending: false });
 
     // If caller passed selectorIts, apply it as an additional filter (optional)
     if (selectorIts) {
@@ -44,7 +44,7 @@ const submitFeedback = async (req, res) => {
   try {
     const { selectorIts, partnerIts, selectorName, partnerName, feedback } =
       req.body;
-    await Supabase.from("feedback").delete().eq("selectorIts", selectorIts).eq("partnerIts", partnerIts);
+    // await Supabase.from("feedback").delete().eq("selectorIts", selectorIts).eq("partnerIts", partnerIts);
     await Supabase.from("feedback").insert([
       {
         selectorIts,
