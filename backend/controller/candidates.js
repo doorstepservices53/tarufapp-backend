@@ -429,6 +429,7 @@ const submitRound1 = async (req, res) => {
 const getRound1Selected = async (req, res) => {
   try {
     const taruf_id = req.query.taruf_id;
+
     const selector_id = req.query.selector_id;
     const memberName = req.query.memberName; // Will be undefined if not provided
 
@@ -437,23 +438,25 @@ const getRound1Selected = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Missing taruf_id" });
 
-    // Call the RPC function
-    // We pass the parameters as an object
-    const { data, error } = await Supabase.rpc("get_round1_data_with_slots", {
-      p_taruf_id: Number(taruf_id),
-      p_selector_id: selector_id ? String(selector_id) : null,
-    });
+    // *** REPLACING RPC WITH SIMPLE SELECT QUERY ***
+    const { data, error } = await Supabase.from("round1_selected") // Target the table/view
+      .select(
+        `*, 
+  selector_counsellor`
+      ) // Select all columns from the table/view
+      .eq("taruf_id", Number(taruf_id)); // Filter by taruf_id
 
     if (error) {
-      console.error("getRound1Selected RPC error:", error);
+      console.error("getRound1Selected DB error:", error);
       return res.status(500).json({ success: false, error: "Database error" });
     }
     let currentData = data || [];
     let memberCandidates = [];
     if (memberName) {
-      const { data: memberCandidatesData, error: memberCandidatesError } = await Supabase.from("registrations")
-        .select("*")
-        .ilike("counsellor", `%${memberName}%`);
+      const { data: memberCandidatesData, error: memberCandidatesError } =
+        await Supabase.from("registrations")
+          .select("*")
+          .ilike("counsellor", `%${memberName}%`);
       if (!memberCandidatesError) {
         memberCandidates = memberCandidatesData;
       }
@@ -462,12 +465,15 @@ const getRound1Selected = async (req, res) => {
       const memberCandidateIds = new Set(
         memberCandidates.map((c) => String(c.registration_id))
       );
-      currentData = currentData.filter((item) =>
-        memberCandidateIds.has(String(item.selected_registration_id)) ||
-        memberCandidateIds.has(String(item.selector_registration_id))
+      currentData = currentData.filter(
+        (item) =>
+          memberCandidateIds.has(String(item.selected_registration_id)) ||
+          memberCandidateIds.has(String(item.selector_registration_id))
       );
     }
 
+    // You now have all fields from the round1_selected table/view
+    // return res.status(200).json({ success: true, data: data || [] });
     // The data is already flat and joined!
     return res.status(200).json({ success: true, data: currentData || [] });
   } catch (err) {
@@ -593,7 +599,7 @@ const addRound1Selection = async (req, res) => {
       selector_badge,
       selected_badge,
     } = req.body || {};
-
+    console.log(req.body);
     if (!selector_id || !selected_registration_id) {
       return res.status(400).json({
         success: false,
@@ -644,7 +650,7 @@ const addRound1Selection = async (req, res) => {
         .status(400)
         .json({ success: false, error: "Candidate already selected" });
     }
-    console.log(selector_id, "selector)id");
+    console.log(selector_id, "selector_id");
     const { data: counsellorData, error: counsellorErr } = await Supabase.from(
       "registrations"
     )
@@ -1172,10 +1178,10 @@ const handleCandidateSchedule = async (req, res) => {
           ? slot.selected_registration_id
           : slot.selector_registration_id;
 
-      const partnerProfile = [...profileMap.values()].find(
-        p => Number(p.id) === Number(partnerId)
-      ) || null;
-
+      const partnerProfile =
+        [...profileMap.values()].find(
+          (p) => Number(p.id) === Number(partnerId)
+        ) || null;
 
       assignedSchedule.push({
         slot: slot.slot,
@@ -1307,7 +1313,7 @@ const updateFirstChoice = async (req, res) => {
 const getFeedbacks = async (req, res) => {
   // Use query parameters for GET request
   const { selectorIts, partnerIts } = req.query;
-
+  console.log(selectorIts, partnerIts);
   if (!selectorIts || !partnerIts) {
     return res.status(400).json({
       success: false,
@@ -1319,13 +1325,11 @@ const getFeedbacks = async (req, res) => {
   // const supabase = ...
 
   try {
-    const { data, error } = await supabase
-      .from("feedback")
-      .select("feedback") // Select only the feedback text
-      .eq("selector_its", selectorIts)
-      .eq("partner_its", partnerIts)
-      .limit(1); // Should only be one due to the unique constraint
-
+    const { data, error } = await Supabase.from("feedback")
+      .select("feedback")
+      .eq("selectorIts", Number(selectorIts)) // Cast to Number
+      .eq("partnerIts", Number(partnerIts)) // Cast to Number
+      .limit(1);
     if (error) throw error;
 
     // Return the feedback text or null if not found
@@ -1358,30 +1362,34 @@ const saveFeedback = async (req, res) => {
   }
 
   try {
-    const { data, error } = await supabase
-      .from("feedback")
+    const { data, error } = await Supabase.from("feedback")
       .upsert(
         {
-          // Database columns (snake_case) mapping to request body (camelCase)
           selector_its: String(selectorIts),
           partner_its: String(partnerIts),
           selector_name: selectorName,
           partner_name: partnerName,
           feedback: feedback,
-          // You can add an updated_at field here if your table has one
-          // updated_at: new Date()
         },
-        // 'onConflict' specifies the unique columns to check for update (upsert)
         { onConflict: "selector_its, partner_its" }
       )
       .select(); // Request the inserted/updated data back
 
+    // ⚠️ CRITICAL FIX START ⚠️
     if (error) {
-      console.error("Supabase Feedback Upsert Error:", error);
-      throw new Error(error.message);
-    }
+      // Log the error/warning for debugging, but don't treat it as a failure
+      // if data was successfully returned (meaning the upsert worked).
+      console.warn("Supabase Feedback Upsert warning/error:", error);
 
-    // Respond with success and the updated/inserted data
+      if (!data || data.length === 0) {
+        // If NO data was returned, THEN it's a true failure.
+        // Throw a specific error to be caught by the catch block.
+        throw new Error(error.message || "Failed to upsert data.");
+      }
+    }
+    // ⚠️ CRITICAL FIX END ⚠️
+
+    // Respond with success
     return res.status(200).json({
       success: true,
       message: "Feedback successfully auto-saved.",
@@ -1389,12 +1397,176 @@ const saveFeedback = async (req, res) => {
     });
   } catch (err) {
     console.error("Server Error in saveFeedback:", err.message);
+    // This is the error the frontend is currently receiving!
     return res.status(500).json({
       success: false,
       error: "Failed to save feedback due to a server error.",
     });
   }
 };
+
+// POST /api/ratings
+// controllers/ratingsController.js (only the createRating function)
+async function createRating(req, res) {
+  try {
+    let { selector_its, selector_name, partner_its, partner_name, rating } =
+      req.body;
+
+    // Basic presence checks
+    if (
+      !selector_its ||
+      !partner_its ||
+      typeof rating === "undefined" ||
+      rating === null
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing required fields" });
+    }
+
+    // Normalize rating to lowercase string "yes" or "no"
+    if (typeof rating === "number") {
+      // backward compatibility: treat nonzero as yes, zero as no
+      rating = rating ? "yes" : "no";
+    } else {
+      rating = String(rating).trim().toLowerCase();
+    }
+
+    if (!["yes", "no"].includes(rating)) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          error: "Invalid rating. Allowed: 'yes' or 'no'.",
+        });
+    }
+
+    const row = {
+      selector_its: String(selector_its),
+      selector_name: selector_name ?? null,
+      partner_its: String(partner_its),
+      partner_name: partner_name ?? null,
+      rating: rating,
+    };
+
+    // Upsert: If same selector_its + partner_its exists, update rating; otherwise insert new
+    const { data, error } = await supabase.from("ratings").upsert(row, {
+      onConflict: ["selector_its", "partner_its"],
+      returning: "representation",
+    });
+
+    if (error) {
+      console.error("supabase upsert error:", error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    return res.json({ success: true, data: data?.[0] ?? null });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, error: err.message || "Server error" });
+  }
+}
+
+// GET /api/ratings?selectorIts=...&partnerIts=...
+async function getSingleRating(req, res) {
+  try {
+    const selectorIts = String(req.query.selectorIts || "");
+    const partnerIts = String(req.query.partnerIts || "");
+    if (!selectorIts || !partnerIts) {
+      return res.json({ success: true, rating: null });
+    }
+    const { data, error } = await supabase
+      .from("ratings")
+      .select("rating")
+      .eq("selector_its", selectorIts)
+      .eq("partner_its", partnerIts)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    return res.json({ success: true, rating: data?.rating ?? null });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, error: err.message || "Server error" });
+  }
+}
+
+/**
+ * GET /api/ratings/counsellor?name=CounsellorName
+ * Returns ratings where either selector_its or partner_its belong to registrations that have counsellor = name.
+ * Response: { success: true, ratings_given: [...], ratings_received: [...] }
+ */
+async function getRatingsForCounsellor(req, res) {
+  try {
+    const counsellorName = req.query.name;
+    if (!counsellorName) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing counsellor name" });
+    }
+
+    // 1) get all registrations itsNumbers for this counsellor
+    const { data: regs, error: regsErr } = await supabase
+      .from("registrations")
+      .select("itsNumber, name, id, counsellor")
+      .eq("counsellor", counsellorName);
+
+    if (regsErr) {
+      console.error("registrations query error:", regsErr);
+      return res.status(500).json({ success: false, error: regsErr.message });
+    }
+
+    const itsList = (regs || [])
+      .map((r) => String(r.itsNumber || r.its || "").trim())
+      .filter(Boolean);
+    if (itsList.length === 0) {
+      return res.json({
+        success: true,
+        ratings_given: [],
+        ratings_received: [],
+      });
+    }
+
+    // 2) fetch ratings where selector_its in itsList (ratings given BY these candidates)
+    const { data: given, error: givenErr } = await supabase
+      .from("ratings")
+      .select("*")
+      .in("selector_its", itsList);
+
+    if (givenErr) {
+      console.error("ratings given query error:", givenErr);
+      return res.status(500).json({ success: false, error: givenErr.message });
+    }
+
+    // 3) fetch ratings where partner_its in itsList (ratings received BY these candidates)
+    const { data: received, error: recvErr } = await supabase
+      .from("ratings")
+      .select("*")
+      .in("partner_its", itsList);
+
+    if (recvErr) {
+      console.error("ratings received query error:", recvErr);
+      return res.status(500).json({ success: false, error: recvErr.message });
+    }
+
+    return res.json({
+      success: true,
+      ratings_given: given || [],
+      ratings_received: received || [],
+      members_count: itsList.length,
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, error: err.message || "Server error" });
+  }
+}
 
 export {
   getActiveTarufs,
@@ -1419,4 +1591,7 @@ export {
   updateFirstChoice,
   getFeedbacks,
   saveFeedback,
+  createRating,
+  getSingleRating,
+  getRatingsForCounsellor,
 };
