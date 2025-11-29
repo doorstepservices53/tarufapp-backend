@@ -300,7 +300,6 @@ const getRegistrations = async (req, res) => {
     const { data, error } = await Supabase.from("registrations")
       .select("*")
       .eq("taruf_id", taruf_id)
-      .eq("group", group)
       .order("badgeNo", { ascending: true });
 
     if (error) {
