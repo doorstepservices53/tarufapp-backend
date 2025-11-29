@@ -1313,7 +1313,6 @@ const updateFirstChoice = async (req, res) => {
 const getFeedbacks = async (req, res) => {
   // Use query parameters for GET request
   const { selectorIts, partnerIts } = req.query;
-  console.log(selectorIts, partnerIts);
   if (!selectorIts || !partnerIts) {
     return res.status(400).json({
       success: false,
@@ -1440,20 +1439,15 @@ async function createRating(req, res) {
           error: "Invalid rating. Allowed: 'yes' or 'no'.",
         });
     }
-
-    const row = {
+    await Supabase.from("ratings").delete().eq("selector_its", String(selector_its)).eq("partner_its", String(partner_its));
+    // Upsert: If same selector_its + partner_its exists, update rating; otherwise insert new
+    const { data, error } = await Supabase.from("ratings").insert([{
       selector_its: String(selector_its),
       selector_name: selector_name ?? null,
       partner_its: String(partner_its),
       partner_name: partner_name ?? null,
       rating: rating,
-    };
-
-    // Upsert: If same selector_its + partner_its exists, update rating; otherwise insert new
-    const { data, error } = await Supabase.from("ratings").upsert(row, {
-      onConflict: ["selector_its", "partner_its"],
-      returning: "representation",
-    });
+    }]);
 
     if (error) {
       console.error("supabase upsert error:", error);

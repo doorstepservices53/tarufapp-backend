@@ -44,7 +44,7 @@ const submitFeedback = async (req, res) => {
   try {
     const { selectorIts, partnerIts, selectorName, partnerName, feedback } =
       req.body;
-
+    await Supabase.from("feedback").delete().eq("selectorIts", selectorIts).eq("partnerIts", partnerIts);
     await Supabase.from("feedback").insert([
       {
         selectorIts,
