@@ -5,8 +5,8 @@ import { Supabase } from "../db/db.js";
 const getFeedback = async (req, res) => {
   try {
     // Read query params (GET /feedback?partnerIts=...&selectorIts=...)
-    const partnerIts = req.query.partnerIts || req.body?.partnerIts;
-    const selectorIts = req.query.selectorIts || req.body?.selectorIts;
+    const partnerIts = Number(req.query.partnerIts || req.body?.partnerIts);
+    const selectorIts = Number(req.query.selectorIts || req.body?.selectorIts);
 
     if (!partnerIts) {
       return res.status(400).json({ error: "partnerIts is required" });
