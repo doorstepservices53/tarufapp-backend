@@ -1450,7 +1450,7 @@ async function createRating(req, res) {
     };
 
     // Upsert: If same selector_its + partner_its exists, update rating; otherwise insert new
-    const { data, error } = await supabase.from("ratings").upsert(row, {
+    const { data, error } = await Supabase.from("ratings").upsert(row, {
       onConflict: ["selector_its", "partner_its"],
       returning: "representation",
     });
@@ -1476,7 +1476,7 @@ async function getSingleRating(req, res) {
     if (!selectorIts || !partnerIts) {
       return res.json({ success: true, rating: null });
     }
-    const { data, error } = await supabase
+    const { data, error } = await Supabase
       .from("ratings")
       .select("rating")
       .eq("selector_its", selectorIts)
@@ -1511,7 +1511,7 @@ async function getRatingsForCounsellor(req, res) {
     }
 
     // 1) get all registrations itsNumbers for this counsellor
-    const { data: regs, error: regsErr } = await supabase
+    const { data: regs, error: regsErr } = await Supabase
       .from("registrations")
       .select("itsNumber, name, id, counsellor")
       .eq("counsellor", counsellorName);
@@ -1533,7 +1533,7 @@ async function getRatingsForCounsellor(req, res) {
     }
 
     // 2) fetch ratings where selector_its in itsList (ratings given BY these candidates)
-    const { data: given, error: givenErr } = await supabase
+    const { data: given, error: givenErr } = await Supabase
       .from("ratings")
       .select("*")
       .in("selector_its", itsList);
@@ -1544,7 +1544,7 @@ async function getRatingsForCounsellor(req, res) {
     }
 
     // 3) fetch ratings where partner_its in itsList (ratings received BY these candidates)
-    const { data: received, error: recvErr } = await supabase
+    const { data: received, error: recvErr } = await Supabase
       .from("ratings")
       .select("*")
       .in("partner_its", itsList);
