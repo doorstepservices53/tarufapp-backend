@@ -23,6 +23,9 @@ import {
   updateFirstChoice,
   getFeedbacks,
   saveFeedback,
+  createRating,
+  getSingleRating,
+  getRatingsForCounsellor,
 } from "../controller/candidates.js";
 import {
   getAllCandidatesWithFeedback,
@@ -49,7 +52,7 @@ router.get("/round1_selected", getRound1Selected);
 
 // Legacy routes (kept for compatibility)
 router.get("/registrations", getRegistrations);
-router.get("/round1_selected", getRound1Selected);
+// router.get("/round1_selected", getRound1Selected);
 
 // OPTIMIZED Route: Gets all registrations, filters out selectors, and returns the result (Used by frontend)
 router.get("/getCandidatesNotSelectors", getCandidatesNotSelectors);
@@ -81,5 +84,13 @@ router.get("/members-feedback/all", getAllCandidatesWithFeedback);
 
 // POST a review
 router.post("/members-feedback", submitMemberFeedback);
+
+router.post("/ratings", createRating);
+
+// GET single rating between selector & partner
+router.get("/ratings", getSingleRating);
+
+// GET ratings for counsellor
+router.get("/counsellor", getRatingsForCounsellor);
 
 export default router;

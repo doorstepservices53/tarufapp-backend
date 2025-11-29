@@ -35,7 +35,7 @@ import {
   getRegistrations,
   getRound1Selected,
 } from "../controller/yetNotSelects.js";
-
+import { handleCandidateSchedule } from "../controller/cubicalRoundAdmin.js";
 const router = express.Router();
 
 router.get("/dashboard", Dashboard);
@@ -125,5 +125,6 @@ router.get("/registrations/:id", TarufRegistersByIds);
 router.get("/registrations", getRegistrations);
 router.get("/round1_selected", getRound1Selected);
 router.get("/candidates_not_selectors", getCandidatesNotSelectors);
+router.get("/candidate_schedule/:taruf_id", handleCandidateSchedule);
 
 export default router;
